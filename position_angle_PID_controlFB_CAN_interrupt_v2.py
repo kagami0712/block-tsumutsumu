@@ -19,8 +19,8 @@ theta = None
 # 目標位置
 target_x = 0.0  # 目標X座標
 target_y = 500.0   # 目標Y座標
-taget_theta = 90.0
-target_theta = 180.0 * taget_theta / 3.14152  # 目標角度（ラジアン）
+taget_theta = 0.0
+target_theta = 3.14 * taget_theta / 180  # 目標角度（ラジアン）
 
 # 位置情報のデコード
 def decode_position(data):
@@ -59,7 +59,7 @@ class PIDController:
         
         # 中間値を表示
         print(f"Error: {error}, Integral: {self.integral}, Derivative: {derivative}, Output: {output}")
-
+        
         self.previous_error = error  # 前回の誤差を更新
         return output
 
@@ -107,7 +107,7 @@ def main(dt):
     pid_position = PIDController(Kp=0.8, Ki=0.00, Kd=0.0)  # 位置制御のPIDゲイン
 
     # 角度制御用PIDコントローラ
-    pid_angle = PIDController(Kp=0.1, Ki=0.0, Kd=0.0)  # 角度制御のPIDゲイン
+    pid_angle = PIDController(Kp=0.8, Ki=0.0, Kd=0.0)  # 角度制御のPIDゲイン
 
     print("CAN Busを監視中...")
 
@@ -128,11 +128,23 @@ def main(dt):
             velocity = np.zeros(2)
             velocity[0] = pid_position.update(target_position[0], current_position[0], dt)  # x方向
             velocity[1] = pid_position.update(target_position[1], current_position[1], dt)  # y方向
+            modified_vx = velocity[0] * np.cos(theta) - velocity[1] * np.sin(theta)
+            modified_vy = velocity[0] * np.sin(theta) + velocity[1] * np.cos(theta)
+            velocity[0] = modified_vx
+            velocity[1] = modified_vy
 
             # 角度制御：PIDで角速度を計算
             target_angle = target_theta
             angle_error = target_angle - theta
             theta_dot = pid_angle.update(target_angle, theta, dt)  # 角速度
+
+            # 位置エラーと角度エラーを表示
+            position_error = np.linalg.norm(target_position - current_position)
+            print(f"目標位置: ({target_x}, {target_y}), 現在位置: ({x_position}, {y_position}), 位置エラー: {position_error}")
+            print(f"目標角度: {target_theta} rad, 現在角度: {theta} rad, 角度エラー: {angle_error} rad")
+
+            # 送信する速度と角速度を表示
+            print(f"送信する速度ベクトル: vx = {velocity[0]}, vy = {velocity[1]}, 角速度: {theta_dot}")
 
             # 速度と角速度をCANに送信
             send_velocity_to_can(velocity[0], velocity[1], theta_dot)

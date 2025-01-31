@@ -20,7 +20,7 @@ theta = None
 target_x = 0.0  # 目標X座標
 target_y = 500.0   # 目標Y座標
 taget_theta = 90.0
-target_theta = 180.0 * taget_theta / np.pi  # 目標角度（ラジアン）
+target_theta = 180.0 * taget_theta / 3.14152  # 目標角度（ラジアン）
 
 # 位置情報のデコード
 def decode_position(data):
@@ -59,7 +59,7 @@ class PIDController:
         
         # 中間値を表示
         print(f"Error: {error}, Integral: {self.integral}, Derivative: {derivative}, Output: {output}")
-        
+
         self.previous_error = error  # 前回の誤差を更新
         return output
 
@@ -133,14 +133,6 @@ def main(dt):
             target_angle = target_theta
             angle_error = target_angle - theta
             theta_dot = pid_angle.update(target_angle, theta, dt)  # 角速度
-
-            # 位置エラーと角度エラーを表示
-            position_error = np.linalg.norm(target_position - current_position)
-            print(f"目標位置: ({target_x}, {target_y}), 現在位置: ({x_position}, {y_position}), 位置エラー: {position_error}")
-            print(f"目標角度: {target_theta} rad, 現在角度: {theta} rad, 角度エラー: {angle_error} rad")
-
-            # 送信する速度と角速度を表示
-            print(f"送信する速度ベクトル: vx = {velocity[0]}, vy = {velocity[1]}, 角速度: {theta_dot}")
 
             # 速度と角速度をCANに送信
             send_velocity_to_can(velocity[0], velocity[1], theta_dot)

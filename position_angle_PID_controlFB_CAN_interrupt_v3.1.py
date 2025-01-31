@@ -169,6 +169,8 @@ def main(dt):
                     send_velocity_to_can(0.0, 0.0, 0.0)
                     break  # 制御ループを抜ける
 
+            time.sleep(0.01)
+
 if __name__ == "__main__":
     # 時間間隔を変更可能
     main(dt=0.05)  # dtは変更可能

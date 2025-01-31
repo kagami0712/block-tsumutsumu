@@ -18,7 +18,7 @@ theta = None
 
 # 目標位置
 target_x = 0.0  # 目標X座標
-target_y = 500.0   # 目標Y座標
+target_y = 500.0  # 目標Y座標
 taget_theta = 0.0
 target_theta = 3.14 * taget_theta / 180  # 目標角度（ラジアン）
 
@@ -118,6 +118,12 @@ def main(dt):
     receive_thread.daemon = True  # メインプログラムが終了するとスレッドも終了するように設定
     receive_thread.start()
 
+    # 終了判定用の閾値
+    position_error_threshold = 0.05  # 位置誤差がこの閾値以下で終了
+    angle_error_threshold = 0.05    # 角度誤差がこの閾値以下で終了
+    velocity_threshold = 0.01       # 速度ベクトルがこの閾値以下で終了
+    theta_dot_threshold = 0.01      # 角速度がこの閾値以下で終了
+
     while True:
         # 目標位置と角度に向かってPID制御を行う
         if x_position is not None and y_position is not None and theta is not None:
@@ -155,6 +161,12 @@ def main(dt):
             last_send_time = current_time  # 最後の送信時刻を更新
 
             print(f"速度ベクトル送信間隔: {send_interval:.2f} ms")
+
+            # 終了条件のチェック
+            if position_error < position_error_threshold and abs(angle_error) < angle_error_threshold:
+                if np.linalg.norm([velocity[0], velocity[1]]) < velocity_threshold and abs(theta_dot) < theta_dot_threshold:
+                    print("目標位置と目標角度に到達しました。PID制御を終了します。")
+                    break  # 制御ループを抜ける
 
 if __name__ == "__main__":
     # 時間間隔を変更可能
